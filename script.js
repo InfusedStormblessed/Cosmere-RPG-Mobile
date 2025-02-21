@@ -1,377 +1,147 @@
-const output = document.getElementById('output');
-const input = document.getElementById('input');
-const submit = document.getElementById('submit');
+const player1 = document.getElementById('player1');
+const player2 = document.getElementById('player2');
+const player1HealthBar = document.getElementById('player1-health');
+const player2HealthBar = document.getElementById('player2-health');
+const winScreen = document.getElementById('win-screen');
+const winMessage = document.getElementById('win-message');
+const restartButton = document.getElementById('restart-button');
+const gameContainer = document.getElementById('game-container');
 
-let player = {
-  name: '',
-  class: '',
-  hp: 0,
-  maxHp: 0,
-  mp: 0,
-  maxMp: 0,
-  atk: 0,
-  def: 0,
-  exp: 0,
-  level: 1,
-  inventory: [],
-  shield: 0
-};
+const p1LeftButton = document.getElementById('p1-left');
+const p1RightButton = document.getElementById('p1-right');
+const p1AttackButton = document.getElementById('p1-attack');
+const p1AttackTypeButton = document.getElementById('p1-attack-type');
+const p2LeftButton = document.getElementById('p2-left');
+const p2RightButton = document.getElementById('p2-right');
+const p2AttackButton = document.getElementById('p2-attack');
+const p2AttackTypeButton = document.getElementById('p2-attack-type');
 
-let enemy = {
-  name: '',
-  hp: 0,
-  atk: 0
-};
+let player1X = 100;
+let player2X = gameContainer.offsetWidth - 150;
+let player1Y = 275;
+let player2Y = 275;
+let player1Attacking = false;
+let player2Attacking = false;
+let player1AttackType = 1;
+let player2AttackType = 1;
+let player1Health = 100;
+let player2Health = 100;
 
-let gameState = 'characterCreation';
-let playerPosition = { x: 1, y: 1 };
-let enemyPosition = { x: 0, y: 0 };
+const playerSpeed = 5;
 
-let classes = {
-  windrunner: { name: 'Windrunner', hp: 120, atk: 12, def: 8, mp: 20 },
-  lightweaver: { name: 'Lightweaver', hp: 100, atk: 15, def: 5, mp: 30 },
-  edgedancer: { name: 'Edgedancer', hp: 110, atk: 10, def: 10, mp: 25 },
-  truthwatcher: { name: 'Truthwatcher', hp: 90, atk: 8, def: 12, mp: 35 },
-  skybreaker: {name: 'Skybreaker', hp:130, atk:18, def: 6, mp:15},
-  willshaper: {name: 'Willshaper', hp: 105, atk: 9, def: 9, mp: 30},
-  stoneward: {name: 'Stoneward', hp: 150, atk: 8, def: 15, mp: 10}
-};
+function checkCollision() {
+  const rect1 = player1.getBoundingClientRect();
+  const rect2 = player2.getBoundingClientRect();
 
-let enemies = {
-  skaze: { name: 'Skaze', hp: 60, atk: 12 },
-  voidbringer: { name: 'Voidbringer', hp: 80, atk: 18 },
-  chull: { name: 'Chull', hp: 100, atk: 20 },
-  fused: { name: 'Fused', hp: 70, atk: 15 },
-  unmade: {name: 'Unmade', hp: 150, atk: 25}
-};
-
-let items = {
-  10: { name: 'Stormlight Vial', effect: 'heal', amount: 40 },
-  20: { name: 'Infused Gem', effect: 'mana', amount: 30 },
-  30: { name: 'Shardblade Fragment', effect: 'atk', amount: 8 },
-  40: { name: 'Shardplate Plating', effect: 'def', amount: 5 },
-  50: {name: 'Sphere of Protection', effect: 'shield', amount: 30},
-  60: {name: 'Voidlight Crystal', effect: 'enemyDamage', amount: 20}
-};
-
-let mapData = [
-  [1, 1, 1, 1, 1],
-  [1, 0, 0, 2, 1],
-  [1, 0, 1, 0, 1],
-  [1, 3, 0, 0, 1],
-  [1, 1, 1, 1, 1]
-];
-
-let mapFeatures = {
-  2: 'Ruined Tower',
-  3: 'Cremling Nest'
-};
-
-function print(text) {
-  output.innerHTML += `<p>${text}</p>`;
-  output.scrollTop = output.scrollHeight;
-}
-
-function startGame() {
-  print('Welcome to Roshar!');
-  print('Choose your Order: 1. Windrunner, 2. Lightweaver, 3. Edgedancer, 4. Truthwatcher, 5. Skybreaker, 6. Willshaper, 7. Stoneward');
-}
-
-function handleInput() {
-  const command = input.value.trim();
-  input.value = '';
-
-  if (gameState === 'characterCreation') {
-    if (player.name === '') {
-      let classKey = Object.keys(classes)[parseInt(command) - 1];
-      if (classes[classKey]) {
-        player.class = classes[classKey].name;
-        player.hp = classes[classKey].hp; player.maxHp = classes[classKey].hp;
-        player.atk = classes[classKey].atk; player.def = classes[classKey].def;
-        player.mp = classes[classKey].mp; player.maxMp = classes[classKey].mp;
-        print('Enter your name:');
-      } else {
-        print('Invalid class choice.');
-        startGame();
-      }
+  if (rect1.left < rect2.right &&
+      rect1.right > rect2.left &&
+      rect1.top < rect2.bottom &&
+      rect1.bottom > rect2.top &&
+      player1Attacking && player2Attacking) {
+    if (player1AttackType === player2AttackType) {
+      player1Health -= 10;
+      player2Health -= 10;
     } else {
-      player.name = command;
-      gameState = 'exploration';
-      print(`Welcome, ${player.name}, ${player.class}!`);
-      showExplorationOptions();
+      if (player1AttackType === 1) player2Health -= 20;
+      else player1Health -= 20;
     }
-  } else if (gameState === 'exploration') {
-    handleExploration(command);
-  } else if (gameState === 'combat') {
-    handleCombat(command);
+    updateHealthBars();
+    if (player1Health <= 0 || player2Health <= 0) {
+      endGame();
+    }
   }
 }
 
-function showExplorationOptions() {
-  print('1. Move, 2. Inventory, 3. Fight');
-}
+function updatePlayers() {
+  player1.style.left = player1X + 'px';
+  player1.style.top = player1Y + 'px';
+  player2.style.left = player2X + 'px';
+  player2.style.top = player2Y + 'px';
 
-function handleExploration(command) {
-  if (command === '1') {
-    print('Move N/S/E/W');
-    input.addEventListener('keydown', handleDirection);
-  } else if (command === '2') {
-    print(`Inventory: ${player.inventory.join(', ')}`);
-    print('Use item? (item number or "no")');
-    input.addEventListener('keydown', handleItemUse);
-  } else if (command === '3') {
-    startCombat();
+  if (player1Attacking) {
+    player1.classList.add(player1AttackType === 1 ? 'attack' : 'attack2');
   } else {
-    print('Invalid command.');
-    showExplorationOptions();
+    player1.classList.remove('attack', 'attack2');
   }
-  updateMap();
-}
 
-function handleDirection(event) {
-  let direction = event.key;
-  movePlayer(direction);
-  input.removeEventListener('keydown', handleDirection);
-}
-
-function handleItemUse(event) {
-  input.removeEventListener('keydown', handleItemUse);
-  if (event.key === 'Enter') {
-    let itemNumber = parseInt(input.value);
-    input.value = '';
-    let itemIndex = player.inventory.indexOf(itemNumber);
-    if (itemIndex !== -1 && items[itemNumber]) {
-      let item = items[itemNumber];
-      if (item.effect === 'heal') {
-        player.hp = Math.min(player.maxHp, player.hp + item.amount);
-        print(`Used ${item.name}. Healed ${item.amount} HP.`);
-      } else if (item.effect === 'mana') {
-        player.mp = Math.min(player.maxMp, player.mp + item.amount);
-        print(`Used ${item.name}. Restored ${item.amount} MP.`);
-      } else if (item.effect === 'atk') {
-        player.atk += item.amount;
-        print(`Used ${item.name}. Attack increased by ${item.amount}.`);
-      } else if (item.effect === 'def') {
-        player.def += item.amount;
-        print(`Used ${item.name}. Defense increased by ${item.amount}.`);
-      } else if (item.effect === 'shield') {
-        player.shield = item.amount;
-        print(`Used ${item.name}. You have a shield of ${item.amount} damage.`);
-      } else if (item.effect === 'enemyDamage') {
-        enemy.hp = Math.max(0, enemy.hp - item.amount);
-        print(`Used ${item.name}. Enemy takes ${item.amount} damage.`);
-      }
-      player.inventory.splice(itemIndex, 1);
-    } else {
-      print('Invalid item number.');
-    }
-    showExplorationOptions();
-  } else if (input.value.toLowerCase() === 'no') {
-      input.value = '';
-      showExplorationOptions();
-      input.removeEventListener('keydown', handleItemUse);
-  }
-}
-
-function startCombat() {
-  gameState = 'combat';
-  let enemyKeys = Object.keys(enemies);
-  let randomEnemyKey = enemyKeys[Math.floor(Math.random() * enemyKeys.length)];
-  enemy = { ...enemies[randomEnemyKey] };
-  enemyPosition.x = Math.floor(Math.random() * 5) + 1;
-  enemyPosition.y = Math.floor(Math.random() * 5) + 1;
-  print(`A wild ${enemy.name} appears!`);
-  showCombatOptions();
-  updateMap();}
-
-function showCombatOptions() {
-  print(`Enemy: ${enemy.name}, HP: ${enemy.hp}`);
-  print('1. Attack, 2. Run, 3. Magic attack');
-}
-
-function handleCombat(command) {
-  if (command === '1') {
-    const playerDamage = Math.floor(Math.random() * player.atk) + 1;
-    enemy.hp -= playerDamage;
-    print(`You deal ${playerDamage} damage.`);
-    if (enemy.hp <= 0) {
-      print(`You defeated the ${enemy.name}!`);
-      player.exp += 20;
-      if (player.exp >= 100) {
-        player.level++; player.exp -= 100; player.maxHp += 20; player.atk += 5; player.def += 2; player.maxMp += 10; player.hp = player.maxHp; player.mp = player.maxMp;
-        print(`You Leveled up!`);
-      }
-      gameState = 'exploration';
-      enemyPosition.x = 0;
-      enemyPosition.y = 0;
-      showExplorationOptions();
-      updateMap();
-      return;
-    }
-    const enemyDamage = Math.floor(Math.random() * enemy.atk) + 1;
-    if (player.shield > 0) {
-      let damageTaken = Math.min(enemyDamage, player.shield);
-      player.shield -= damageTaken;
-      enemyDamage -= damageTaken;
-      print(`Your shield absorbed ${damageTaken} damage.`);
-    }
-    player.hp = Math.max(0, player.hp - enemyDamage);
-    print(`The ${enemy.name} attacks! You take ${enemyDamage} damage.`);
-    if (player.hp <= 0) {
-      print('You were defeated!');
-      gameState = 'exploration';
-      player.hp = player.maxHp;
-      player.mp = player.maxMp;
-      enemyPosition.x = 0;
-      enemyPosition.y = 0;
-      showExplorationOptions();
-      updateMap();
-      return;
-    }
-    showCombatOptions();
-  } else if (command === '2') {
-    print('You ran away!');
-    gameState = 'exploration';
-    enemyPosition.x = 0;
-    enemyPosition.y = 0;
-    showExplorationOptions();
-    updateMap();
-  } else if (command === '3' && player.mp >= 5) {
-    player.mp -= 5;
-    const playerDamage = Math.floor(Math.random() * (player.atk + 10)) + 1;
-    enemy.hp -= playerDamage;
-    print(`You deal ${playerDamage} magic damage.`);
-    if (enemy.hp <= 0) {
-      print(`You defeated the ${enemy.name}!`);
-      player.exp += 20;
-      if (player.exp >= 100) {
-        player.level++; player.exp -= 100; player.maxHp += 20; player.atk += 5; player.def += 2; player.maxMp += 10; player.hp = player.maxHp; player.mp = player.maxMp;
-        print(`You Leveled up!`);
-      }
-      gameState = 'exploration';
-      enemyPosition.x = 0;
-      enemyPosition.y = 0;
-      showExplorationOptions();
-      updateMap();
-      return;
-    }
-    const enemyDamage = Math.floor(Math.random() * enemy.atk) + 1;
-    if (player.shield > 0) {
-      let damageTaken = Math.min(enemyDamage, player.shield);
-      player.shield -= damageTaken;
-      enemyDamage -= damageTaken;
-      print(`Your shield absorbed ${damageTaken} damage.`);
-    }
-    player.hp = Math.max(0, player.hp - enemyDamage);
-    print(`The ${enemy.name} attacks! You take ${enemyDamage} damage.`);
-    if (player.hp <= 0) {
-      print('You were defeated!');
-      gameState = 'exploration';
-      player.hp = player.maxHp;
-      player.mp = player.maxMp;
-      enemyPosition.x = 0;
-      enemyPosition.y = 0;
-      showExplorationOptions();
-      updateMap();
-      return;
-    }
-    showCombatOptions();
+  if (player2Attacking) {
+    player2.classList.add(player2AttackType === 1 ? 'attack' : 'attack2');
   } else {
-    print('Invalid command.');
-    showCombatOptions();
+    player2.classList.remove('attack', 'attack2');
   }
 
-  // Enemy AI
-  if (gameState === 'combat' && enemy.hp > 0) {
-    if (Math.random() < 0.7) {
-      const enemyDamage = Math.floor(Math.random() * enemy.atk) + 1;
-      if (player.shield > 0) {
-        let damageTaken = Math.min(enemyDamage, player.shield);
-        player.shield -= damageTaken;
-        enemyDamage -= damageTaken;
-        print(`Your shield absorbed ${damageTaken} damage.`);
-      }
-      player.hp = Math.max(0, player.hp - enemyDamage);
-      print(`The ${enemy.name} attacks! You take ${enemyDamage} damage.`);
-    } else {
-      print(`The ${enemy.name} hesitates.`);
-    }
-  }
+  checkCollision();
+  requestAnimationFrame(updatePlayers);
 }
 
-function updateMap() {
-  const mapContainer = document.querySelector('.map');
-  if (mapContainer) {
-    mapContainer.remove();
-  }
-
-  const map = document.createElement('div');
-  map.classList.add('map');
-  document.getElementById('game-container').appendChild(map);
-
-  for (let y = 1; y <= 5; y++) {
-    for (let x = 1; x <= 5; x++) {
-      const cell = document.createElement('div');
-      cell.classList.add('map-cell');
-      map.appendChild(cell);
-
-      if (playerPosition.x === x && playerPosition.y === y) {
-        const playerDiv = document.createElement('div');
-        playerDiv.classList.add('player');
-        cell.appendChild(playerDiv);
-      }
-
-      if (enemyPosition.x === x && enemyPosition.y === y && gameState === 'combat') {
-        const enemyDiv = document.createElement('div');
-        enemyDiv.classList.add('enemy', enemy.name.toLowerCase());
-        cell.appendChild(enemyDiv);
-      }
-      if (mapData[y - 1][x - 1] === 1) {
-        cell.style.backgroundColor = 'gray';
-      } else if (mapData[y - 1][x - 1] === 2 || mapData[y - 1][x - 1] === 3) {
-        cell.style.backgroundColor = 'brown';
-      }
-    }
-  }
+function updateHealthBars() {
+  player1HealthBar.style.width = player1Health + '%';
+  player1HealthBar.style.backgroundColor = player1Health > 50 ? 'green' : player1Health > 20 ? 'yellow' : 'red';
+  player2HealthBar.style.width = player2Health + '%';
+  player2HealthBar.style.backgroundColor = player2Health > 50 ? 'green' : player2Health > 20 ? 'yellow' : 'red';
 }
 
-document.getElementById('up').addEventListener('click', () => movePlayer('ArrowUp'));
-document.getElementById('down').addEventListener('click', () => movePlayer('ArrowDown'));
-document.getElementById('left').addEventListener('click', () => movePlayer('ArrowLeft'));
-document.getElementById('right').addEventListener('click', () => movePlayer('ArrowRight'));
-
-function movePlayer(direction) {
-  if (direction === 'ArrowUp' && playerPosition.y > 1) {
-    playerPosition.y--;
-  } else if (direction === 'ArrowDown' && playerPosition.y < 5) {
-    playerPosition.y++;
-  } else if (direction === 'ArrowLeft' && playerPosition.x > 1) {
-    playerPosition.x--;
-  } else if (direction === 'ArrowRight' && playerPosition.x < 5) {
-    playerPosition.x++;
-  }
-  if (mapData[playerPosition.y - 1][playerPosition.x - 1] === 1) {
-    if (direction === 'ArrowUp' || direction === 'ArrowDown' || direction === 'ArrowLeft' || direction === 'ArrowRight'){
-      playerPosition.x = playerPosition.x;
-      playerPosition.y = playerPosition.y;
-    }
-  }
-  updateMap();
-  if (Math.random() < .3) {
-    startCombat();
-  } else if (mapData[playerPosition.y - 1][playerPosition.x - 1] === 2 || mapData[playerPosition.y - 1][playerPosition.x - 1] === 3) {
-    print(`You find a ${mapFeatures[mapData[playerPosition.y - 1][playerPosition.x - 1]]}!`);
-  } else {
-    showExplorationOptions();
-  }
+function endGame() {
+  winMessage.textContent = player1Health <= 0 ? 'Player 2 Wins!' : 'Player 1 Wins!';
+  winScreen.classList.remove('hidden');
 }
 
-submit.addEventListener('click', handleInput);
-input.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    handleInput();
+restartButton.addEventListener('click', () => {
+  location.reload();
+});
+
+document.addEventListener('keydown', (event) => {
+  switch (event.key) {
+    case 'a':
+      player1X = Math.max(0, player1X - playerSpeed);
+      break;
+    case 'd':
+      player1X = Math.min(gameContainer.offsetWidth - 50, player1X + playerSpeed);
+      break;
+    case 'w':
+      player1Attacking = true;
+      break;
+    case 's':
+      player1AttackType = player1AttackType === 1 ? 2 : 1;
+      break;
+    case 'ArrowLeft':
+      player2X = Math.max(0, player2X - playerSpeed);
+      break;
+    case 'ArrowRight':
+      player2X = Math.min(gameContainer.offsetWidth - 50, player2X + playerSpeed);
+      break;
+    case 'ArrowUp':
+      player2Attacking = true;
+      break;
+    case 'ArrowDown':
+      player2AttackType = player2AttackType === 1 ? 2 : 1;
+      break;
   }
 });
 
-startGame();
-updateMap();
+document.addEventListener('keyup', (event) => {
+  switch (event.key) {
+    case 'w':
+      player1Attacking = false;
+      break;
+    case 'ArrowUp':
+      player2Attacking = false;
+      break;
+  }
+});
+
+// Mobile Controls
+p1LeftButton.addEventListener('touchstart', () => { player1X = Math.max(0, player1X - playerSpeed); });
+p1RightButton.addEventListener('touchstart', () => { player1X = Math.min(gameContainer.offsetWidth - 50, player1X + playerSpeed); });
+p1AttackButton.addEventListener('touchstart', () => { player1Attacking = true; });
+p1AttackButton.addEventListener('touchend', () => { player1Attacking = false; });
+p1AttackTypeButton.addEventListener('touchstart', () => { player1AttackType = player1AttackType === 1 ? 2 : 1; });
+
+p2LeftButton.addEventListener('touchstart', () => { player2X = Math.max(0, player2X - playerSpeed); });
+p2RightButton.addEventListener('touchstart', () => { player2X = Math.min(gameContainer.offsetWidth - 50, player2X + playerSpeed); });
+p2AttackButton.addEventListener('touchstart', () => { player2Attacking = true; });
+p2AttackButton.addEventListener('touchend', () => { player2Attacking = false; });
+p2AttackTypeButton.addEventListener('touchstart', () => { player2AttackType = player2AttackType === 1 ? 2 : 1; });
+
+updateHealthBars();
+updatePlayers();
