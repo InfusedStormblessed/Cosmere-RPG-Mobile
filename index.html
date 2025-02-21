@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>1v1 Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="player1" class="player">
+      <div id="player1-health" class="health-bar"></div>
+    </div>
+    <div id="player2" class="player">
+      <div id="player2-health" class="health-bar"></div>
+    </div>
+  </div>
+  <div id="win-screen" class="hidden">
+    <h2 id="win-message"></h2>
+    <button id="restart-button">Restart</button>
+  </div>
+
+  <div id="mobile-controls">
+    <div id="player1-controls">
+      <button id="p1-left">Left</button>
+      <button id="p1-right">Right</button>
+      <button id="p1-attack">Attack</button>
+      <button id="p1-attack-type">Type</button>
+    </div>
+    <div id="player2-controls">
+      <button id="p2-left">Left</button>
+      <button id="p2-right">Right</button>
+      <button id="p2-attack">Attack</button>
+      <button id="p2-attack-type">Type</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
